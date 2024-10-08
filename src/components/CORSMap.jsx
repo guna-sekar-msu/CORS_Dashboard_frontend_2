@@ -21,6 +21,7 @@ import SketchViewModel from '@arcgis/core/widgets/Sketch/SketchViewModel';
 import * as geometryEngineAsync from '@arcgis/core/geometry/geometryEngineAsync';
 import sendJsonData from '../apiService';
 import Home from '@arcgis/core/widgets/Home';
+import moment from 'moment-timezone';
 
 const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
   const mapRef = useRef(null);
@@ -42,9 +43,8 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
   // Fetch data once on component mount if outputData is not provided
   useEffect(() => {
     if (!outputData) {
-      const date = new Date('2024-04-14');
       const input_data = {
-        date: date,
+        date: moment.tz('2024-04-14', 'America/Los_Angeles').toDate(),
         options: 'Initial Load'
       };
       sendJsonData(input_data)

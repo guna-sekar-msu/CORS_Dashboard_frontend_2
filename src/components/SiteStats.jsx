@@ -3,6 +3,7 @@ import { Bar, Pie } from "react-chartjs-2";
 import Modal from 'react-modal';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import moment from 'moment-timezone';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -32,7 +33,7 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [disableInteractions, setDisableInteractions] = useState(false);
   const [activeTab, setActiveTab] = useState('bar');
-  const [selectedDate, setSelectedDate] = useState(new Date('2024-04-15')); // State for selected date
+  const [selectedDate, setSelectedDate] = useState(moment.tz('2024-04-14', 'America/Los_Angeles').toDate()); // State for selected date
   const [errorMessage, setErrorMessage] = useState('');  // State for error message
   const [lat, setLat] = useState("");  // For latitude input
   const [lon, setLon] = useState("");  // For longitude input
@@ -75,7 +76,7 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
 
   const datefun = (date) => {
     const input_data = {
-      date: date,
+      date: moment(date).tz('America/Los_Angeles').toDate(),
       options: selectedOption
     };
     sendJsonData(input_data)
@@ -108,7 +109,7 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
     setDisableInteractions(false); // Enable interactions if they were disabled
     setErrorMessage(''); // Clear any error messages
     if(option==='Static JSON + STACOV File'){
-      const newDate = new Date('2024-04-14'); // Set date to 01-01-2010
+      const newDate = moment.tz('2024-04-14', 'America/Los_Angeles').toDate(); // Set date to 01-01-2010
       setSelectedDate(newDate); // Update selected date state
       const input_data = {
         date: newDate,
@@ -136,7 +137,7 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
       });
     }
     else if(option === 'Over All Vs MYCS2'){
-      const newDate = new Date('2010-01-01'); // Set date to 01-01-2010
+      const newDate = moment.tz('2010-01-01', 'America/Los_Angeles').toDate(); // Set date to 01-01-2010
       setSelectedDate(newDate); // Update selected date state
       const input_data = {
         date: newDate,
