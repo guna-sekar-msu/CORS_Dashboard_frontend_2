@@ -22,6 +22,8 @@ import * as geometryEngineAsync from '@arcgis/core/geometry/geometryEngineAsync'
 import sendJsonData from '../apiService';
 import Home from '@arcgis/core/widgets/Home';
 import moment from 'moment-timezone';
+import Bookmarks from '@arcgis/core/widgets/Bookmarks';
+import BgLoader from './bg_loader';  // Import the bg_loader component
 
 const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
   const mapRef = useRef(null);
@@ -39,6 +41,8 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
   const [loading, setLoading] = useState(true);
   const [selectedRadius, setSelectedRadius] = useState(0);  // Radius selection state
   const [selectedFeatures, setSelectedFeatures] = useState([]);  // State to store selected features
+  const [bookmarks, setBookmarks] = useState([]); // State to store bookmarks
+  const [bg_loader, setBgLoader] = useState(true);  // Update to bg_loader state
 
   // Fetch data once on component mount if outputData is not provided
   useEffect(() => {
@@ -47,17 +51,21 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
         date: moment.tz('2024-04-14', 'America/Los_Angeles').toDate(),
         options: 'Initial Load'
       };
+      setBgLoader(true);  // Show bg_loader
       sendJsonData(input_data)
         .then(response => {
           setFetchedData(response.data);
           setLoading(false);
+          setBgLoader(false);  // Hide bg_loader after fetching data
         })
         .catch(error => {
           console.error("There was an error fetching data!", error);
           setLoading(false);
+          setBgLoader(false);  // Hide bg_loader 
         });
     } else {
       setLoading(false);
+      setBgLoader(false);
     }
   }, []);
 
@@ -405,6 +413,52 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
         view.graphics.removeAll(); // Clear previous graphics
         sketchViewModelRef.current.create('rectangle');
       };
+      // Bookmark Widget
+      const bookmarksWidget = new Bookmarks({
+        view: view,
+        editingEnabled: true, // Allow adding and editing bookmarks
+        bookmarks: null // Load existing bookmarks from state
+      });
+
+      const bookmarksExpand = new Expand({
+        view: view,
+        content: bookmarksWidget,
+        expanded: false
+      });
+
+      view.ui.add(bookmarksExpand, "top-right");
+
+      // Handle bookmark selection
+      bookmarksWidget.on("select-bookmark", (event) => {
+        const selectedBookmark = event.bookmark;
+        if (selectedBookmark && selectedBookmark.extent) {
+          view.goTo(selectedBookmark.extent);
+        } else if (selectedBookmark && selectedBookmark.name) {
+          // Geocode the place name and navigate
+          const locatorUrl = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
+          locator.addressToLocations(locatorUrl, {
+            address: { SingleLine: selectedBookmark.name },
+            maxLocations: 1
+          }).then((results) => {
+            if (results.length > 0) {
+              const location = results[0].location;
+              view.goTo({
+                target: location,
+                zoom: 12
+              });
+            } else {
+              console.error("Location not found for bookmark");
+            }
+          }).catch((error) => {
+            console.error("Error in geocoding bookmark name:", error);
+          });
+        }
+      });
+
+      // Save new bookmarks to state
+      bookmarksWidget.on("bookmark-edit", (event) => {
+        setBookmarks(bookmarksWidget.bookmarks.toArray());
+      });
       view.on("click", (event) => {
         const lat = event.mapPoint.latitude.toFixed(2);
         const lon = event.mapPoint.longitude.toFixed(2);
@@ -520,6 +574,8 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
 
   return (
     <div>
+      {/* Show bg_loader if bg_loader is true */}
+      {bg_loader && <BgLoader />}
       <div ref={toolbarDivRef} id="toolbarDiv" className="esri-component esri-widget absolute top-20 left-[1px] z-10">
         <button ref={distanceRef} className="esri-widget--button esri-interactive esri-icon-measure-line" title="Distance Measurement Tool"></button>
         <button ref={areaRef} className="esri-widget--button esri-interactive esri-icon-measure-area" title="Area Measurement Tool"></button>
