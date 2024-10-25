@@ -339,6 +339,7 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
       const fullScreen = new Fullscreen({
         view: view
       })
+      
       view.ui.add(fullScreen, "top-right");
       // Basemap Gallery
       const basemapGallery = new Expand({
