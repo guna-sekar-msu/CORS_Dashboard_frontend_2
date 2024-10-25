@@ -24,6 +24,10 @@ import Home from '@arcgis/core/widgets/Home';
 import moment from 'moment-timezone';
 import Bookmarks from '@arcgis/core/widgets/Bookmarks';
 import BgLoader from './bg_loader';  // Import the bg_loader component
+import Collection from '@arcgis/core/core/Collection';
+import Extent from '@arcgis/core/geometry/Extent';
+import Print from '@arcgis/core/widgets/Print';
+import Fullscreen from '@arcgis/core/widgets/Fullscreen'
 
 const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
   const mapRef = useRef(null);
@@ -331,7 +335,11 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
       });
 
       view.ui.add(searchWidget, "top-right");
-
+      view.ui.add(searchWidget, "top-right");
+      const fullScreen = new Fullscreen({
+        view: view
+      })
+      view.ui.add(fullScreen, "top-right");
       // Basemap Gallery
       const basemapGallery = new Expand({
         content: new BasemapGallery({
@@ -413,27 +421,65 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
         view.graphics.removeAll(); // Clear previous graphics
         sketchViewModelRef.current.create('rectangle');
       };
-      // Bookmark Widget
+      // Step 1: Retrieve stored bookmarks from localStorage
+      const storedBookmarks = localStorage.getItem('userBookmarks');
+      let initialBookmarks = [];
+
+      if (storedBookmarks) {
+        try {
+          initialBookmarks = JSON.parse(storedBookmarks);
+          console.log('Retrieved bookmarks from localStorage:', initialBookmarks);
+        } catch (error) {
+          console.error('Error parsing bookmarks from localStorage:', error);
+          initialBookmarks = [];
+        }
+      }
+
+      // Step 2: Initialize the Bookmarks widget with stored bookmarks
       const bookmarksWidget = new Bookmarks({
-        view: view,
-        editingEnabled: true, // Allow adding and editing bookmarks
-        bookmarks: null // Load existing bookmarks from state
+        view: viewRef.current,
+        dragEnabled: true,  // Enable drag functionality
+
+        // Control visibility of bookmark buttons
+        visibleElements: {
+          editBookmarkButton: true,
+          addBookmarkButton: true
+        },
+        bookmarks: new Collection(initialBookmarks.length > 0 ? initialBookmarks : []),
       });
 
       const bookmarksExpand = new Expand({
-        view: view,
+        view: viewRef.current,
         content: bookmarksWidget,
         expanded: false
       });
+      view.ui.add(bookmarksExpand, 'top-right');      
+      // Step 3: Handle all changes (bookmark create, edit, and delete) using 'change' event
+      bookmarksWidget.bookmarks.on('change', (event) => {
+        const updatedBookmarks = bookmarksWidget.bookmarks.toArray();
+        
+        // Handle new bookmarks added
+        if (event.added && event.added.length > 0) {
+          console.log('Bookmark(s) added:', event.added);
+        }
 
-      view.ui.add(bookmarksExpand, "top-right");
+        // Handle bookmarks removed
+        if (event.removed && event.removed.length > 0) {
+          console.log('Bookmark(s) removed:', event.removed);
+        }
 
-      // Handle bookmark selection
-      bookmarksWidget.on("select-bookmark", (event) => {
+        // Update localStorage and application state after any change
+        setBookmarks(updatedBookmarks);
+        localStorage.setItem('userBookmarks', JSON.stringify(updatedBookmarks));
+        console.log('Bookmarks collection changed and updated in localStorage:', updatedBookmarks);
+      });
+
+      // Step 4: Handle bookmark selection (remains the same)
+      bookmarksWidget.on('bookmark-select', (event) => {
+        console.log("selected");
         const selectedBookmark = event.bookmark;
-        if (selectedBookmark && selectedBookmark.extent) {
-          view.goTo(selectedBookmark.extent);
-        } else if (selectedBookmark && selectedBookmark.name) {
+        console.log(selectedBookmark.name);
+        if (selectedBookmark && selectedBookmark.name) {
           // Geocode the place name and navigate
           const locatorUrl = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
           locator.addressToLocations(locatorUrl, {
@@ -454,11 +500,24 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
           });
         }
       });
-
-      // Save new bookmarks to state
-      bookmarksWidget.on("bookmark-edit", (event) => {
-        setBookmarks(bookmarksWidget.bookmarks.toArray());
+      // **Define the Print Widget first**
+      const printWidget = new Print({
+        view: view,
+        printServiceUrl:
+          "https://utility.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task"
       });
+
+      // **Then wrap it inside the Expand widget**
+      const printExpand = new Expand({
+        content: printWidget,  // Pass the defined printWidget here
+        view: view,
+        expanded: false,  // Start in a collapsed state
+        expandIconClass: "esri-icon-printer",  // Optional: Icon for the expand button
+        expandTooltip: "Print Map"  // Tooltip when hovering over the expand button
+      });
+
+      // Add the Expand widget (with the Print widget inside) to the top-right corner
+      view.ui.add(printExpand, "top-right");
       view.on("click", (event) => {
         const lat = event.mapPoint.latitude.toFixed(2);
         const lon = event.mapPoint.longitude.toFixed(2);
