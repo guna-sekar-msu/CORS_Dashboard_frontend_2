@@ -17,11 +17,11 @@ const ParentFeature = () => {
       <header className="bg-blue-500 text-white p-5 text-center">
         <h1>CORS Sites Dashboard</h1>
       </header>
-      <div className="flex flex-1">
-        <div className="flex-[5] p-2.5 relative">
+      <div className="flex flex-1 flex-col md:flex-row">
+        <div className="flex-[5] p-2.5 relative h-[60vh] md:h-auto">
           <CORSMap onLocationFound={setLocationInfo} outputData={outputData} coordinates={coordinates} /> {/* Pass outputData to CORSMap */}
         </div>
-        <div className="flex-1 p-5 bg-gray-200 overflow-y-auto">
+        <div className="md:flex-1 p-5 bg-gray-200 overflow-y-auto">
           <SiteStats setOutputData={setOutputData} setCoordinates={setCoordinates}/> {/* Pass setOutputData to SiteStats */}
           {locationInfo.address && (
             <div className="mt-5 p-2.5 border border-gray-300 rounded-lg bg-gray-100 w-full">
