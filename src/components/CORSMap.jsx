@@ -27,7 +27,8 @@ import BgLoader from './bg_loader';  // Import the bg_loader component
 import Collection from '@arcgis/core/core/Collection';
 import Extent from '@arcgis/core/geometry/Extent';
 import Print from '@arcgis/core/widgets/Print';
-import Fullscreen from '@arcgis/core/widgets/Fullscreen'
+import Fullscreen from '@arcgis/core/widgets/Fullscreen';
+import Locate from '@arcgis/core/widgets/Locate';
 
 const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
   const mapRef = useRef(null);
@@ -359,7 +360,11 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
       });
 
       view.ui.add(measurement, "bottom-right");
-
+      // Add Locate widget
+      const locate = new Locate({
+        view: view
+      })
+      view.ui.add(locate, "top-right");
       // Add Home Button here
       const homeWidget = new Home({
         view: view
