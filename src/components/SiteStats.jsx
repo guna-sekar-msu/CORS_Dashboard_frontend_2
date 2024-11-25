@@ -193,7 +193,7 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
     <div className={`site-stats ${disableInteractions ? 'pointer-events-none select-none' : ''}`}>
       {/* Show bg_loader if bg_loader is true */}
       {bg_loader && <BgLoader />}
-      <h1>Additional Info</h1>
+      <h1 className="bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 text-white">Additional Info</h1>
       <h3 className="mt-10">Choose Dataset</h3>
       
       {/* Dropdown for selecting an option */}
@@ -290,7 +290,7 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
             className="block w-full p-2 border rounded"
           />
         </div>
-        <button onClick={handleCoordinateSearch} className="p-2 mt-2 bg-blue-500 text-white">
+        <button onClick={handleCoordinateSearch} className="p-2 mt-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 text-white">
           Search
         </button>
       </div>

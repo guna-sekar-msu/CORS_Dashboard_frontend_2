@@ -29,6 +29,7 @@ import Extent from '@arcgis/core/geometry/Extent';
 import Print from '@arcgis/core/widgets/Print';
 import Fullscreen from '@arcgis/core/widgets/Fullscreen';
 import Locate from '@arcgis/core/widgets/Locate';
+import CoordinateConversion from '@arcgis/core/widgets/CoordinateConversion';
 
 const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
   const mapRef = useRef(null);
@@ -275,7 +276,7 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
           style: "card"
         }),
         view: view,
-        expanded: true
+        expanded: false
       });
 
       view.ui.add(legend, "bottom-left");
@@ -336,7 +337,7 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
       });
 
       view.ui.add(searchWidget, "top-right");
-      view.ui.add(searchWidget, "top-right");
+
       const fullScreen = new Fullscreen({
         view: view
       })
@@ -549,8 +550,72 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
             });
           });
       });
-    });
-  }, [onLocationFound, outputData, fetchedData, loading]);  // Initialize map only once
+      // Add CoordinateConversion widget
+      const ccWidget = new CoordinateConversion({
+        view: viewRef.current // Use the MapView reference
+      });
+      view.ui.add(ccWidget, "bottom-left");
+      const clearFunction = () => {
+        if (clearRef.current) {
+          clearRef.current.onclick();
+        }
+      };
+      //cap
+      const handleKeyPress=(event)=>{
+        const key=event.key.toLowerCase();
+        if(!(event.altKey)) return; // Ignore if Alt is not pressed
+        switch (key){
+          //zoom in and zoom out (-,+)Default
+          case 'm':
+            basemapGallery.expanded = !basemapGallery.expanded;
+            break;
+          case 'f':
+            fullScreen.viewModel.toggle();
+            break;
+          case 'h':
+            homeWidget.go();
+            break;
+          case 'p':
+            printExpand.expanded = !printExpand.expanded;
+            break;
+          case 'c':
+            measurement.clear();
+            polygonGraphicsLayer.removeAll();
+            markerLayer.current.removeAll();
+            clearFunction();
+            break;
+          case 'b':
+            bookmarksExpand.expanded = !bookmarksExpand.expanded;
+            break;
+          case 'Escape':          
+            measurement.clear();
+            view.graphics.removeAll();
+            
+            break;
+          case '1':
+            measurement.activeTool = 'distance';
+            break;
+          case '2':
+            measurement.activeTool = 'area';
+            break;
+          case 'r': // For radius functionality
+            if (radiusDropdownRef.current) {
+              // Toggle the dropdown visibility for radius selection
+              radiusDropdownRef.current.classList.toggle('hidden');
+            }
+            break;
+          case ' ':
+            setShowBottomBar(prev => !prev);
+            break;          
+        }
+      }
+      window.addEventListener('keydown',handleKeyPress);
+      return()=>{
+        if(view)view.destroy();
+        window.removeEventListener('keydown',handleKeyPress);
+      };
+    });    
+  }, [onLocationFound, outputData, fetchedData, loading,bg_loader]);  // Initialize map only once
 
   // Handle radius changes without reloading the map
   useEffect(() => {
