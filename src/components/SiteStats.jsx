@@ -15,7 +15,7 @@ import {
   ArcElement,
 } from "chart.js";
 import sendJsonData from '../apiService';
-import BgLoader from './bg_loader';  // Import the bg_loader component
+
 
 ChartJS.register(
   CategoryScale,
@@ -29,7 +29,7 @@ ChartJS.register(
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
-const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputData as a prop
+const SiteStats = ({ setOutputData, setCoordinates, updateBgLoader}) => {  // Accept setOutputData as a prop
   const [stats, setStats] = useState({});
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [disableInteractions, setDisableInteractions] = useState(false);
@@ -39,11 +39,12 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
   const [lat, setLat] = useState("");  // For latitude input
   const [lon, setLon] = useState("");  // For longitude input
   const [selectedOption, setSelectedOption] = useState('Static JSON + STACOV File'); // State for selected dropdown option
-  const [bg_loader, setBgLoader] = useState(true);  // Update to bg_loader state
+
 
   useEffect(() => {
-    setBgLoader(true);  // Show loader while fetching
-    fetch("/CORS_Site_JSON_1.json")
+      // Show loader while fetching
+    updateBgLoader(true);
+   fetch("/CORS_Site_JSON_1.json")
       .then(response => response.json())
       .then(data => {
         const statusCounts = data.features.reduce((acc, feature) => {
@@ -51,7 +52,8 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
           acc[status] = (acc[status] || 0) + 1;
           return acc;
         }, {});
-        setBgLoader(false);  // Hide loader after fetching
+          // Hide loader after fetching
+        updateBgLoader(false);
         setStats(statusCounts);
       });
   }, []);
@@ -79,20 +81,23 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
   };
 
   const datefun = (date) => {
-    setBgLoader(true);  // Show loader before API call
-    const input_data = {
+      // Show loader before API call
+    updateBgLoader(false);
+   const input_data = {
       date: moment(date).tz('America/Los_Angeles').toDate(),
       options: selectedOption
     };
     sendJsonData(input_data)
       .then(response => {
         setOutputData(response.data);  // This will trigger the useEffect in the parent component to log the new data
-        setBgLoader(false);  // Hide loader after data is fetched
-      })
+          // Hide loader after data is fetched
+        updateBgLoader(false);
+     })
       .catch(error => {
         console.error("There was an error!", error);
-        setBgLoader(false);  // Hide loader on error
-        if (selectedOption === 'Static JSON + STACOV File') {
+          // Hide loader on error
+        updateBgLoader(false);
+       if (selectedOption === 'Static JSON + STACOV File') {
           setErrorMessage('Please choose a date between 14 April 2024 to 31 May 2024');
           setModalIsOpen(true);  // Show the modal with the error message
         }
@@ -115,23 +120,27 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
     setSelectedOption(option); // Update selected option in the dropdown
     setDisableInteractions(false); // Enable interactions if they were disabled
     setErrorMessage(''); // Clear any error messages
-    setBgLoader(true);  // Show loader while handling selection
-    if(option==='Static JSON + STACOV File'){
+      // Show loader while handling selection
+    updateBgLoader(true);
+   if(option==='Static JSON + STACOV File'){
       const newDate = moment.tz('2024-04-14', 'America/Los_Angeles').toDate(); // Set date to 01-01-2010
       setSelectedDate(newDate); // Update selected date state
       const input_data = {
         date: newDate,
         options: option
       };
-      setBgLoader(true);
-      sendJsonData(input_data)
+      
+      updateBgLoader(true);
+     sendJsonData(input_data)
       .then(response => {
         setOutputData(response.data);  // This will trigger the useEffect in the parent component to log the new data
-        setBgLoader(false);
+        
+        updateBgLoader(false);
       })
       .catch(error => {
         console.error("There was an error!", error);
-        setBgLoader(false);
+        
+        updateBgLoader(false);
       });
     }
     else if(option === 'Over All Site Info'){
@@ -139,16 +148,19 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
         date: selectedDate,
         options: option
       };
-      setBgLoader(true);
+      
+      updateBgLoader(true);
       sendJsonData(input_data)
       .then(response => {
         setOutputData(response.data);  // This will trigger the useEffect in the parent component to log the new data
-        setBgLoader(false);
+          // Hide loader after data is fetched
+        updateBgLoader(false);
       })
       .catch(error => {
         console.error("There was an error!", error);
-        setBgLoader(false);  // Hide loader
-      });
+          // Hide loader
+        updateBgLoader(false);
+     });
     }
     else if(option === 'Over All Vs MYCS2'){
       const newDate = moment.tz('2010-01-01', 'America/Los_Angeles').toDate(); // Set date to 01-01-2010
@@ -157,15 +169,18 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
         date: newDate,
         options: option
       };
-      setBgLoader(true);
+      
+      updateBgLoader(true);
       sendJsonData(input_data)
       .then(response => {
         setOutputData(response.data);  // This will trigger the useEffect in the parent component to log the new data
-        setBgLoader(false);
+        
+        updateBgLoader(false);
       })
       .catch(error => {
         console.error("There was an error!", error);
-        setBgLoader(false);
+        
+        updateBgLoader(false);
       });
     }
     else if(option === 'OPUSNET Data'){
@@ -175,15 +190,18 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
         date: selectedDate,
         options: option
       };
-      setBgLoader(true);
+      
+      updateBgLoader(true);
       sendJsonData(input_data)
       .then(response => {
         setOutputData(response.data);  // This will trigger the useEffect in the parent component to log the new data
-        setBgLoader(false);
+          // Hide loader after data is fetched
+        updateBgLoader(false);
       })
       .catch(error => {
         console.error("There was an error!", error);
-        setBgLoader(false);  // Hide loader
+          // Hide loader 
+        updateBgLoader(false);
       });
     }
   };
@@ -191,8 +209,6 @@ const SiteStats = ({ setOutputData, setCoordinates }) => {  // Accept setOutputD
 
   return (
     <div className={`site-stats ${disableInteractions ? 'pointer-events-none select-none' : ''}`}>
-      {/* Show bg_loader if bg_loader is true */}
-      {bg_loader && <BgLoader />}
       <h1 className="bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 text-white">Additional Info</h1>
       <h3 className="mt-10">Choose Dataset</h3>
       

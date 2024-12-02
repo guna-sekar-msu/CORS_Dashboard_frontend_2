@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import CORSMap from "./CORSMap";
 import SiteStats from "./SiteStats";
+import BgLoader from './bg_loader';
 
 const ParentFeature = () => {
   const [outputData, setOutputData] = useState(null); // State to hold the output data from SiteStats
@@ -13,11 +14,15 @@ const ParentFeature = () => {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
-  console.log(locationInfo);
-  const [coordinates, setCoordinates] = useState(null);  // State for the coordinates from SiteStats
+  const [bgLoader, setBgLoader] = useState(false); //
+  const handleBgLoaderUpdate = (loaderState) => {
+    setBgLoader(loaderState); // Update the bg_loader state
+  };
+ const [coordinates, setCoordinates] = useState(null);  // State for the coordinates from SiteStats
 
   return (
     <div className="flex flex-col h-screen ">
+      {bgLoader && <BgLoader />}
       <header className="bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 text-white p-5 text-center">
         <h1>CORS Sites Dashboard</h1>
       </header>
@@ -32,14 +37,16 @@ const ParentFeature = () => {
           } w-80`}
         >
           {/* Sidebar Toggle Arrow */}
-          <div
+          <button
             className="absolute top-1/2 left-[-25px] transform -translate-y-1/2 w-10 h-10 bg-gray-400 text-white flex items-center justify-center rounded-l-md cursor-pointer"
             onClick={toggleSidebar}
+            aria-expanded={isSidebarOpen}
+            aria-label="Toggle Sidebar"
           >
             {isSidebarOpen ? ">" : "<"}
-          </div>
+          </button>
           <div className="md:flex-1 p-5 bg-gray-200 overflow-y-auto">
-            <SiteStats setOutputData={setOutputData} setCoordinates={setCoordinates}/> {/* Pass setOutputData to SiteStats */}
+            <SiteStats setOutputData={setOutputData} setCoordinates={setCoordinates} updateBgLoader={handleBgLoaderUpdate}/> {/* Pass setOutputData to SiteStats */}
             {locationInfo.address && (
               <div className="mt-5 p-2.5 border border-gray-300 rounded-lg bg-gray-100 w-full">
                 <h2 className="mb-2.5">Selected Location's</h2>
