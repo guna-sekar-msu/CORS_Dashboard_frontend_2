@@ -30,6 +30,8 @@ import Print from '@arcgis/core/widgets/Print';
 import Fullscreen from '@arcgis/core/widgets/Fullscreen';
 import Locate from '@arcgis/core/widgets/Locate';
 import CoordinateConversion from '@arcgis/core/widgets/CoordinateConversion';
+import { FaFacebook, FaTwitter, FaEnvelope } from 'react-icons/fa';
+import "./Style.css"
 
 const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
   const mapRef = useRef(null);
@@ -49,6 +51,8 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
   const [selectedFeatures, setSelectedFeatures] = useState([]);  // State to store selected features
   const [bookmarks, setBookmarks] = useState([]); // State to store bookmarks
   const [bg_loader, setBgLoader] = useState(true);  // Update to bg_loader state
+  const [showBottomBar, setShowBottomBar] = useState(false);
+  const [isSharePanelVisible, setIsSharePanelVisible] = useState(false);
 
   // Fetch data once on component mount if outputData is not provided
   useEffect(() => {
@@ -555,15 +559,23 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
         view: viewRef.current // Use the MapView reference
       });
       view.ui.add(ccWidget, "bottom-left");
+      const infoButton = document.createElement("button");
+      infoButton.innerText = "i";
+      infoButton.className = "info-button"; // Apply the CSS class   
+        // Add an event listener for the button
+        infoButton.onclick = () => {
+          setShowBottomBar((prevState) => !prevState);
+        };
+        // Add the button to the view's UI
+        view.ui.add(infoButton, "top-right");
       const clearFunction = () => {
         if (clearRef.current) {
           clearRef.current.onclick();
         }
       };
-      //cap
       const handleKeyPress=(event)=>{
         const key=event.key.toLowerCase();
-        if(!(event.altKey)) return; // Ignore if Alt is not pressed
+        if(!(event.shiftKey)) return; // Ignore if Alt is not pressed
         switch (key){
           //zoom in and zoom out (-,+)Default
           case 'm':
@@ -590,23 +602,25 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
           case 'Escape':          
             measurement.clear();
             view.graphics.removeAll();
-            
             break;
-          case '1':
+          case '!':
             measurement.activeTool = 'distance';
             break;
-          case '2':
+          case '@':
             measurement.activeTool = 'area';
             break;
-          case 'r': // For radius functionality
+          case '#': // For radius functionality
             if (radiusDropdownRef.current) {
               // Toggle the dropdown visibility for radius selection
               radiusDropdownRef.current.classList.toggle('hidden');
             }
+            break;  
+          case '+': // Zoom in
+            view.zoom += 1;
             break;
-          case ' ':
-            setShowBottomBar(prev => !prev);
-            break;          
+          case '-': // Zoom out
+            view.zoom -= 1;
+            break;        
         }
       }
       window.addEventListener('keydown',handleKeyPress);
@@ -701,7 +715,88 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
       });
     }
   }, [coordinates]);  // Only update when coordinates change
+  // Copy Link Functionality
+  const copyLink = () => {
+    const link = document.getElementById('share-link');
+    link.select();
+    navigator.clipboard.writeText(link.value);
+    alert('Link copied to clipboard!');
+  };
 
+  // Copy Embed Code Functionality
+  const copyEmbedCode = () => {
+    const embed = document.getElementById('embed-code');
+    embed.select();
+    navigator.clipboard.writeText(embed.value);
+    alert('Embed code copied to clipboard!');
+  };
+
+  // Share Panel content
+  const sharePanelContent = (
+    <div className="p-4 bg-white shadow-lg border border-gray-300 rounded-md">
+      <h3 className="text-xl font-semibold mb-4">Share Map</h3>
+      <p className="mb-2">Link to this map:</p>
+      <textarea
+        id="share-link"
+        readOnly
+        value={window.location.href}
+        className="w-full h-16 mb-4 border border-gray-300 rounded-md"
+      />
+      <button
+        onClick={copyLink}
+        className="w-full py-2 bg-blue-500 text-white rounded-md mb-4"
+      >
+        Copy Link
+      </button>
+
+      <p className="mb-2">Embed this map:</p>
+      <textarea
+        id="embed-code"
+        readOnly
+        value={`<iframe width="600" height="400" frameborder="0" src="${window.location.href}" allowfullscreen></iframe>`}
+        className="w-full h-24 mb-4 border border-gray-300 rounded-md"
+      />
+      <button
+        onClick={copyEmbedCode}
+        className="w-full py-2 bg-blue-500 text-white rounded-md"
+      >
+        Copy Embed Code
+      </button>
+
+      {/* Social media share icons */}
+      <div className="mt-4 flex justify-around">
+        {/* Facebook Icon */}
+        <a
+          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600"
+        >
+          <FaFacebook size={30} />
+        </a>
+        
+        {/* Twitter Icon */}
+        <a
+          href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400"
+        >
+          <FaTwitter size={30} />
+        </a>
+        
+        {/* Gmail Icon */}
+        <a
+          href={`https://mail.google.com/mail/?view=cm&fs=1&to=&su=Check%20out%20this%20map&body=${encodeURIComponent(window.location.href)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-red-600"
+        >
+          <FaEnvelope size={30} />
+        </a>
+      </div>
+    </div>
+  );
   return (
     <div>
       {/* Show bg_loader if bg_loader is true */}
@@ -754,6 +849,43 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
           <p className="text-gray-600">No features selected.</p>
         )}
       </div>
+      {showBottomBar && (
+      <div className="bottom-bar">
+        <p><strong>Keyboard Shortcuts: shift +</strong></p>
+           <div className="shortcuts-grid">
+              <div><span className="key">B</span> Bookmark</div>
+              <div><span className="key">C</span> Clear Measurement</div>
+              <div><span className="key">F</span> Full Screen</div>
+              <div><span className="key">H</span> Home</div>
+              <div><span className="key">M</span> Basemap Gallery</div>
+              <div><span className="key">P</span> Print</div>
+              <div><span className="key">+</span> Zoom In</div>
+              <div><span className="key">-</span> Zoom Out</div>
+           </div>
+        </div>
+      )}
+      {/* Share Button with custom icon */}
+      <button
+          onClick={() => {
+            // Debugging log to check state change
+            console.log('Button clicked! Toggling share panel visibility.');
+            setIsSharePanelVisible(!isSharePanelVisible);
+          }}
+          className="absolute top-[280px] left-6 p-2 bg-white text-white shadow-lg"
+        >
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/2958/2958791.png"
+            alt="Share Icon"
+            className="w-4 h-4"
+          />
+        </button>
+
+        {/* Display share panel if button is clicked */}
+        {isSharePanelVisible && (
+          <div className="absolute top-[300px] left-16 bg-white shadow-lg border border-gray-300 rounded-md w-80">
+            {sharePanelContent}
+          </div>
+        )}
     </div>
   );
 };
