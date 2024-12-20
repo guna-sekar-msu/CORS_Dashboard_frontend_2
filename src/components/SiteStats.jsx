@@ -82,7 +82,7 @@ const SiteStats = ({ setOutputData, setCoordinates, updateBgLoader}) => {  // Ac
 
   const datefun = (date) => {
       // Show loader before API call
-    updateBgLoader(false);
+    updateBgLoader(true);
    const input_data = {
       date: moment(date).tz('America/Los_Angeles').toDate(),
       options: selectedOption
@@ -204,6 +204,26 @@ const SiteStats = ({ setOutputData, setCoordinates, updateBgLoader}) => {  // Ac
         updateBgLoader(false);
       });
     }
+    else if(option === 'MYCS Uncertainty'){
+      const newDate = new Date('2018-10-31'); // Set date to 01-01-2010
+      setSelectedDate(newDate); // Update selected date state
+      const input_data = {
+        date: newDate,
+        options: option
+      };
+      updateBgLoader(true);
+      sendJsonData(input_data)
+      .then(response => {
+        setOutputData(response.data);  // This will trigger the useEffect in the parent component to log the new data
+          // Hide loader after data is fetched
+        updateBgLoader(false);
+      })
+      .catch(error => {
+        console.error("There was an error!", error);
+          // Hide loader 
+        updateBgLoader(false);
+      });
+    }
   };
 
 
@@ -260,6 +280,15 @@ const SiteStats = ({ setOutputData, setCoordinates, updateBgLoader}) => {  // Ac
                 className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900"
               >
                 OPUSNET Uncertainty Data
+              </a>
+            </MenuItem>
+            <MenuItem>
+              <a
+                href="#"
+                onClick={() => handleSelect('MYCS Uncertainty')}
+                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900"
+              >
+                MYCS Uncertainty Data
               </a>
             </MenuItem>
           </div>

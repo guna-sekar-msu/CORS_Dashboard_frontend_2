@@ -53,6 +53,7 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
   const [bg_loader, setBgLoader] = useState(true);  // Update to bg_loader state
   const [showBottomBar, setShowBottomBar] = useState(false);
   const [isSharePanelVisible, setIsSharePanelVisible] = useState(false);
+  const miniMapRef = useRef(null);
 
   // Fetch data once on component mount if outputData is not provided
   useEffect(() => {
@@ -106,7 +107,7 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
       });
       url = URL.createObjectURL(blob);
       presentCount = outputData.status_count;
-      notPresentCount = outputData.features.length - presentCount;
+      // notPresentCount = outputData.features.length - presentCount;
     } else if (fetchedData) {
       prediction_status = false;  // Assign default value
       uncertainty_status = false; // Assign default value
@@ -382,7 +383,55 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
       } else {
         console.error("Toolbar div is not found");
       }
-
+      const miniMap = new Map({
+        basemap: "gray-vector", // Mini map basemap
+      });
+  
+      const miniView = new MapView({
+        container: miniMapRef.current,
+        map: miniMap,
+        center: [-95.7129, 37.0902],
+        zoom: 1,
+        constraints: {
+          snapToZoom: false, // Allow free zoom levels
+        },
+        ui: {
+          components: [], // Remove default UI components for a clean mini-map
+        },
+      });
+  
+      // Sync the mini map's basemap with the main map's basemap
+      map.watch("basemap", (newBasemap) => {
+        miniMap.basemap = newBasemap; // Set the mini map's basemap to match the main map's basemap
+      });
+  
+      // Flags to track synchronization
+      let isSyncing = false;
+  
+      // Sync function with debouncing logic
+      const syncMaps = (sourceView, targetView, scaleFactor) => {
+        if (!isSyncing) {
+          isSyncing = true; // Prevent re-entrant updates
+          targetView
+            .goTo({
+              center: sourceView.extent.center,
+              scale: sourceView.scale * scaleFactor,
+            })
+            .finally(() => {
+              isSyncing = false; // Reset flag after sync
+            });
+        }
+      };
+  
+      // Watch for extent changes in the main map
+      view.watch("extent", () => {
+        syncMaps(view, miniView, 3); // Sync mini map to main map
+      });
+  
+      // Watch for extent changes in the mini map
+      miniView.watch("extent", () => {
+        syncMaps(miniView, view, 1 / 6); // Sync main map to mini map
+      });      
       // Initialize SketchViewModel
       sketchViewModelRef.current = new SketchViewModel({
         view: view,
@@ -820,7 +869,10 @@ const CORSMap = ({ onLocationFound, outputData, coordinates }) => {
         <button ref={clearRef} className="esri-widget--button esri-interactive esri-icon-trash" title="Clear Measurements"></button>
       </div>
       <div ref={mapRef} className="h-[88vh] w-full"></div>  {/* Attach the map view to this div */}
-      
+        <div
+          ref={miniMapRef}
+          className="absolute bottom-36 right-6 h-40 w-40 border-2 border-gray-700 z-10"
+        ></div>
       {/* Display the selected features in a table */}
       <div className="selected-features-table p-4">
         <h3 className="text-lg font-semibold mb-4">Selected Features:</h3>
